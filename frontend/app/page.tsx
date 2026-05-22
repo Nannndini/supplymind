@@ -77,7 +77,7 @@ function Card3D({ children, className = "", style = {} }: { children: React.Reac
 
 function TelemetryMap({ suppliers, alerts }: { suppliers: Supplier[]; alerts: Alert[] }) {
   const hasAlert = (supplierName: string) => {
-    return alerts.some(a => a.supplier_name.toLowerCase() === supplierName.toLowerCase() && !a.resolved);
+    return alerts.some(a => a.supplier_name.toLowerCase() === supplierName.toLowerCase());
   };
 
   return (
@@ -100,7 +100,7 @@ function TelemetryMap({ suppliers, alerts }: { suppliers: Supplier[]; alerts: Al
 
           {/* Central Hub Core */}
           <circle cx="200" cy="130" r="14" fill="#09090b" stroke="#06b6d4" strokeWidth="2.5" />
-          <circle cx="200" cy="130" r="22" fill="none" stroke="#06b6d4" strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow" />
+          <circle cx="200" cy="130" r="22" fill="none" stroke="#06b6d4" strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow animate-origin-central" />
           <circle cx="200" cy="130" r="6" fill="#06b6d4" className="animate-pulse" />
 
           {/* Supplier Nodes */}
@@ -148,6 +148,9 @@ function TelemetryMap({ suppliers, alerts }: { suppliers: Supplier[]; alerts: Al
           }
           .animate-origin-hydro {
             transform-origin: 200px 220px;
+          }
+          .animate-origin-central {
+            transform-origin: 200px 130px;
           }
         `}} />
 
@@ -681,7 +684,9 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {contracts.length === 0 ? (
-              <p className="text-zinc-600 text-xs py-8 text-center col-span-3 font-mono">No contract documents uploaded.</p>
+              <p className="text-zinc-600 text-xs py-8 text-center col-span-3 font-mono">
+                {isContractSearching ? "No matching contract clauses found for this query." : "No contract documents uploaded."}
+              </p>
             ) : (
               contracts.map(c => (
                 <div 
