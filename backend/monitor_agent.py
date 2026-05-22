@@ -27,8 +27,9 @@ def fetch_news_for_location(location):
         return []
     
     url = "https://newsapi.org/v2/everything"
+    query = f'{location} AND ({" OR ".join(DISASTER_KEYWORDS)})'
     params = {
-        "q": location,
+        "q": query,
         "apiKey": NEWS_API_KEY,
         "language": "en",
         "sortBy": "publishedAt",

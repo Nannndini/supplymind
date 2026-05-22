@@ -32,3 +32,13 @@ def alert_model(supplier_name, risk_level, reason, suggested_action):
         "resolved": False,
         "created_at": datetime.utcnow()
     }
+
+def contract_model(supplier_name, contract_id, effective_date, expiration_date, contract_text):
+    return {
+        "supplier_name": supplier_name,
+        "contract_id": contract_id,
+        "effective_date": effective_date,
+        "expiration_date": expiration_date,
+        "contract_text": contract_text,
+        "created_at": datetime.utcnow()
+    }
