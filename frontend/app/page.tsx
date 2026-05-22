@@ -44,9 +44,9 @@ export default function Home() {
   const fetch_data = async () => {
     try {
       const [s, i, a] = await Promise.all([
-        fetch(`${API}/suppliers`).then(r => r.json()),
-        fetch(`${API}/inventory`).then(r => r.json()),
-        fetch(`${API}/alerts`).then(r => r.json()),
+        fetch(`${API}/suppliers`).then(r => r.json()).catch(() => []),
+        fetch(`${API}/inventory`).then(r => r.json()).catch(() => []),
+        fetch(`${API}/alerts`).then(r => r.json()).catch(() => []),
       ]);
       setSuppliers(s); setInventory(i); setAlerts(a);
     } catch (e) {
