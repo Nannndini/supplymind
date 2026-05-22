@@ -1,6 +1,14 @@
+import sys
+
+# Ensure UTF-8 output on Windows consoles
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import suppliers_collection, inventory_collection, alerts_collection
+from database import suppliers_collection, inventory_collection, alerts_collection, populate_embeddings
 from monitor_agent import run_monitor
 from risk_agent import run_risk_analyst
 from action_agent import run_action_agent
@@ -20,6 +28,11 @@ def serialize(doc):
     doc["_id"] = str(doc["_id"])
     return doc
 
+@app.on_event("startup")
+def startup_db_init():
+    print("🚀 Starting up and preparing database...")
+    populate_embeddings()
+
 @app.get("/")
 def root():
     return {"status": "SupplyMind API running"}
@@ -35,6 +48,51 @@ def get_inventory():
 @app.get("/alerts")
 def get_alerts():
     return [serialize(a) for a in alerts_collection.find()]
+
+@app.post("/semantic-search")
+def semantic_search(query: str):
+    if not query.strip():
+        return [serialize(s) for s in suppliers_collection.find()]
+    
+    try:
+        from embeddings import get_embedding
+        query_vector = get_embedding(query)
+        
+        # Atlas Vector Search pipeline stage
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "index": "vector_index",
+                    "path": "embedding",
+                    "queryVector": query_vector,
+                    "numCandidates": 10,
+                    "limit": 5
+                }
+            }
+        ]
+        
+        results = list(suppliers_collection.aggregate(pipeline))
+        if results:
+            print(f"🎯 Vector search succeeded for query: '{query}'")
+            return [serialize(s) for s in results]
+            
+        print("⚠️ Vector search returned 0 results. Trying regex fallback...")
+    except Exception as e:
+        print(f"⚠️ Vector Search failed or not configured ({e}). Running regex fallback search...")
+        
+    # Regex fallback search over supplier fields
+    regex_query = {"$regex": query, "$options": "i"}
+    query_filter = {
+        "$or": [
+            {"name": regex_query},
+            {"location": regex_query},
+            {"category": regex_query},
+            {"items_supplied": regex_query}
+        ]
+    }
+    fallback_results = list(suppliers_collection.find(query_filter))
+    print(f"🔍 Regex search found {len(fallback_results)} fallback results for query: '{query}'")
+    return [serialize(s) for s in fallback_results]
 
 @app.post("/run-pipeline")
 def run_pipeline():

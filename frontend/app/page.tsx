@@ -14,30 +14,68 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [simSupplier, setSimSupplier] = useState("");
   const [simReason, setSimReason] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setIsSearching(false);
+      fetch_data();
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const response = await fetch(`${API}/semantic-search?query=${encodeURIComponent(searchQuery)}`, {
+        method: "POST"
+      });
+      const data = await response.json();
+      setSuppliers(data);
+    } catch (e) {
+      console.error("Error performing semantic search:", e);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearching(false);
+    fetch_data();
+  };
 
   const fetch_data = async () => {
-    const [s, i, a] = await Promise.all([
-      fetch(`${API}/suppliers`).then(r => r.json()),
-      fetch(`${API}/inventory`).then(r => r.json()),
-      fetch(`${API}/alerts`).then(r => r.json()),
-    ]);
-    setSuppliers(s); setInventory(i); setAlerts(a);
+    try {
+      const [s, i, a] = await Promise.all([
+        fetch(`${API}/suppliers`).then(r => r.json()),
+        fetch(`${API}/inventory`).then(r => r.json()),
+        fetch(`${API}/alerts`).then(r => r.json()),
+      ]);
+      setSuppliers(s); setInventory(i); setAlerts(a);
+    } catch (e) {
+      console.error("Error fetching data from API backend:", e);
+    }
   };
 
   useEffect(() => { fetch_data(); }, []);
 
   const runPipeline = async () => {
     setRunning(true);
-    await fetch(`${API}/run-pipeline`, { method: "POST" });
-    await fetch_data();
+    try {
+      await fetch(`${API}/run-pipeline`, { method: "POST" });
+      await fetch_data();
+    } catch (e) {
+      console.error("Error running pipeline:", e);
+    }
     setRunning(false);
   };
 
   const simulateAlert = async () => {
     if (!simSupplier || !simReason) return;
     setRunning(true);
-    await fetch(`${API}/simulate-alert?supplier_name=${simSupplier}&reason=${encodeURIComponent(simReason)}`, { method: "POST" });
-    await fetch_data();
+    try {
+      await fetch(`${API}/simulate-alert?supplier_name=${simSupplier}&reason=${encodeURIComponent(simReason)}`, { method: "POST" });
+      await fetch_data();
+    } catch (e) {
+      console.error("Error simulating alert:", e);
+    }
     setRunning(false);
   };
 
@@ -77,17 +115,47 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-6 mb-6">
           {/* Suppliers */}
           <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-            <h2 className="text-lg font-semibold mb-4">🏭 Suppliers</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">🏭 Suppliers {isSearching && <span className="text-xs font-normal text-blue-400">(Filtered)</span>}</h2>
+              {isSearching && (
+                <button onClick={clearSearch} className="text-xs text-gray-400 hover:text-white underline">
+                  Clear search
+                </button>
+              )}
+            </div>
+            
+            {/* Semantic Search Input */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Semantic search (e.g. packaging in Mumbai)..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:border-blue-500 text-white placeholder-gray-500"
+              />
+              <button
+                onClick={handleSearch}
+                className="bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition whitespace-nowrap"
+              >
+                🔍 Search
+              </button>
+            </div>
+
             <div className="space-y-3">
-              {suppliers.map(s => (
-                <div key={s._id} className="bg-gray-800 rounded-lg p-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{s.name}</p>
-                    <p className="text-gray-400 text-sm">{s.location} · {s.category}</p>
+              {suppliers.length === 0 ? (
+                <p className="text-gray-400 text-sm py-4 text-center">No suppliers found.</p>
+              ) : (
+                suppliers.map(s => (
+                  <div key={s._id} className="bg-gray-800 rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{s.name}</p>
+                      <p className="text-gray-400 text-sm">{s.location} · {s.category}</p>
+                    </div>
+                    <span className="bg-green-600 text-xs px-2 py-1 rounded-full">{s.status}</span>
                   </div>
-                  <span className="bg-green-600 text-xs px-2 py-1 rounded-full">{s.status}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
