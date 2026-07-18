@@ -52,21 +52,23 @@ MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/?retry
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxx
 NEWS_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxx
+JWT_SECRET_KEY=yoursupersecurejwtsecretkeyhere
 ```
 
 ---
 
 ## 📊 MongoDB Atlas Vector Search Index Configuration
 
-To enable semantic query search, you must create a Vector Search Index on the **`suppliers`** collection inside your MongoDB Atlas cluster:
+To enable semantic query search, you must create Vector Search Indexes inside your MongoDB Atlas cluster:
 
+### 1. Suppliers Collection Index
+Create an index on the **`suppliers`** collection:
 1. Go to your MongoDB Atlas dashboard.
 2. Navigate to **Atlas Search** (or **Search** tab in your database collection view).
 3. Click **Create Search Index** and choose **JSON Editor**.
 4. Select the **`supplymind`** database and the **`suppliers`** collection.
 5. Name the index **`vector_index`**.
 6. Paste the following index definition:
-
 ```json
 {
   "fields": [
@@ -79,8 +81,13 @@ To enable semantic query search, you must create a Vector Search Index on the **
   ]
 }
 ```
+7. Click **Next** and then **Create Search Index**.
 
-7. Click **Next** and then **Create Search Index**. It may take a minute to build.
+### 2. Contracts Collection Index
+Create an index on the **`contracts`** collection:
+1. Repeat the steps above, selecting the **`contracts`** collection instead.
+2. Name the index **`vector_index_contracts`**.
+3. Paste the exact same index definition (as shown above) and click **Create Search Index**.
 
 ---
 

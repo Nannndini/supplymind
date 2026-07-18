@@ -1,5 +1,6 @@
-from database import suppliers_collection, inventory_collection, contracts_collection, alerts_collection, populate_embeddings
+from database import suppliers_collection, inventory_collection, contracts_collection, alerts_collection, users_collection, populate_embeddings
 from models import supplier_model, inventory_model, contract_model
+from auth import hash_password
 
 # Clear collections for clean seeding
 print("🧹 Cleaning existing collections...")
@@ -7,6 +8,7 @@ suppliers_collection.delete_many({})
 inventory_collection.delete_many({})
 contracts_collection.delete_many({})
 alerts_collection.delete_many({})
+users_collection.delete_many({})
 
 suppliers = [
     supplier_model("RajPlastics", "Mumbai", "Packaging", "raj@rajplastics.com", ["plastic caps", "bottles"]),
@@ -78,6 +80,14 @@ try:
     
     r3 = contracts_collection.insert_many(contracts)
     print("✅ Contracts inserted:", r3.inserted_ids)
+    
+    # Seed default user
+    default_user = {
+        "username": "admin",
+        "password_hash": hash_password("admin123")
+    }
+    users_collection.insert_one(default_user)
+    print("👤 Seeded default user (admin/admin123) in MongoDB.")
     
     print("🔄 Generating embeddings...")
     populate_embeddings()

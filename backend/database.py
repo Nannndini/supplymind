@@ -27,6 +27,7 @@ suppliers_collection = db["suppliers"]
 inventory_collection = db["inventory"]
 alerts_collection = db["alerts"]
 contracts_collection = db["contracts"]
+users_collection = db["users"]
 
 def populate_embeddings():
     """

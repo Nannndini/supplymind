@@ -7,7 +7,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface Supplier { _id: string; name: string; location: string; category: string; status: string; risk_score: number; }
 interface Inventory { _id: string; item_name: string; supplier_name: string; quantity: number; unit: string; days_remaining: number; reorder_threshold: number; }
-interface Alert { _id: string; supplier_name: string; risk_level: string; reason: string; resolved: boolean; gemini_analysis?: string; action_plan?: string; }
+interface Alert { _id: string; supplier_name: string; risk_level: string; reason: string; resolved: boolean; risk_analysis?: string; action_plan?: string; }
 interface Contract { _id: string; supplier_name: string; contract_id: string; effective_date: string; expiration_date: string; contract_text: string; }
 
 function Card3D({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
@@ -204,6 +204,27 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
 
+  const authenticatedFetch = async (path: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem("supplymind_token");
+    if (!token) {
+      router.push("/login");
+      throw new Error("No token found");
+    }
+    const headers = {
+      ...options.headers,
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    };
+    const response = await fetch(`${API}${path}`, { ...options, headers });
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("supplymind_token");
+      localStorage.removeItem("supplymind_username");
+      router.push("/login");
+      throw new Error("Session expired or unauthorized");
+    }
+    return response;
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       setIsSearching(false);
@@ -212,7 +233,7 @@ export default function Home() {
     }
     setIsSearching(true);
     try {
-      const response = await fetch(`${API}/semantic-search?query=${encodeURIComponent(searchQuery)}`, {
+      const response = await authenticatedFetch(`/semantic-search?query=${encodeURIComponent(searchQuery)}`, {
         method: "POST"
       });
       const data = await response.json();
@@ -236,7 +257,7 @@ export default function Home() {
     }
     setIsContractSearching(true);
     try {
-      const response = await fetch(`${API}/contracts/search?query=${encodeURIComponent(contractSearchQuery)}`, {
+      const response = await authenticatedFetch(`/contracts/search?query=${encodeURIComponent(contractSearchQuery)}`, {
         method: "POST"
       });
       const data = await response.json();
@@ -255,9 +276,9 @@ export default function Home() {
   const fetch_data = async () => {
     try {
       const [s, i, a] = await Promise.all([
-        fetch(`${API}/suppliers`).then(r => r.json()).catch(() => []),
-        fetch(`${API}/inventory`).then(r => r.json()).catch(() => []),
-        fetch(`${API}/alerts`).then(r => r.json()).catch(() => []),
+        authenticatedFetch(`/suppliers`).then(r => r.json()).catch(() => []),
+        authenticatedFetch(`/inventory`).then(r => r.json()).catch(() => []),
+        authenticatedFetch(`/alerts`).then(r => r.json()).catch(() => []),
       ]);
       setSuppliers(s); setInventory(i); setAlerts(a);
     } catch (e) {
@@ -267,7 +288,7 @@ export default function Home() {
 
   const fetchContracts = async () => {
     try {
-      const response = await fetch(`${API}/contracts`);
+      const response = await authenticatedFetch(`/contracts`);
       const data = await response.json();
       setContracts(data);
     } catch (e) {
@@ -297,7 +318,7 @@ export default function Home() {
   const runPipeline = async () => {
     setRunning(true);
     try {
-      await fetch(`${API}/run-pipeline`, { method: "POST" });
+      await authenticatedFetch(`/run-pipeline`, { method: "POST" });
       await fetch_data();
     } catch (e) {
       console.error("Error running pipeline:", e);
@@ -309,7 +330,7 @@ export default function Home() {
     if (!simSupplier || !simReason) return;
     setRunning(true);
     try {
-      await fetch(`${API}/simulate-alert?supplier_name=${simSupplier}&reason=${encodeURIComponent(simReason)}`, { method: "POST" });
+      await authenticatedFetch(`/simulate-alert?supplier_name=${simSupplier}&reason=${encodeURIComponent(simReason)}`, { method: "POST" });
       await fetch_data();
     } catch (e) {
       console.error("Error simulating alert:", e);
@@ -748,14 +769,14 @@ export default function Home() {
                       <p className="text-zinc-300 font-mono">{a.reason}</p>
                     </div>
                     
-                    {a.gemini_analysis && (
+                    {a.risk_analysis && (
                       <div className="bg-zinc-950/60 border border-zinc-900 rounded-xl p-4 space-y-1.5">
                         <p className="text-cyan-400 font-extrabold uppercase tracking-widest text-[9px] flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
                           Risk Analyst Agent Output
                         </p>
                         <div className="text-zinc-400 whitespace-pre-wrap font-mono text-[10px] leading-relaxed">
-                          {a.gemini_analysis}
+                          {a.risk_analysis}
                         </div>
                       </div>
                     )}

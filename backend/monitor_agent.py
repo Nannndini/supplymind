@@ -91,7 +91,28 @@ def run_monitor():
             risks = check_risk_in_articles(articles)
             
             if risks:
+                import re
                 for risk in risks:
+                    # Construct duplicate check query:
+                    # Same supplier name, unresolved, and either same keyword or same article URL
+                    or_conditions = [{"reason": {"$regex": f"Keyword '{risk['keyword']}'", "$options": "i"}}]
+                    if risk.get("url"):
+                        or_conditions.append({"suggested_action": {"$regex": re.escape(risk["url"])}})
+                    
+                    duplicate_query = {
+                        "supplier_name": name,
+                        "resolved": False,
+                        "$or": or_conditions
+                    }
+                    
+                    try:
+                        existing = alerts_collection.find_one(duplicate_query)
+                        if existing:
+                            print(f"  ⏭️ Skipping duplicate unresolved alert for {name} (keyword: '{risk['keyword']}')")
+                            continue
+                    except Exception as exc:
+                        print(f"  ⚠️ Failed to check duplicate alert: {exc}")
+
                     alert = alert_model(
                         supplier_name=name,
                         risk_level="HIGH",
