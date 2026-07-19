@@ -15,6 +15,49 @@ load_dotenv()
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
+import json
+
+def check_article_relevance(title: str, description: str, supplier_name: str, location: str) -> bool:
+    """
+    Checks if a matched news article is actually relevant to a supply chain disruption
+    for the given supplier in their location, filtering out false positives using Groq.
+    """
+    from risk_agent import get_groq_client
+    client = get_groq_client()
+    if not client:
+        print("⚠️ Groq client not initialized for relevance check. Defaulting to relevant.")
+        return True
+
+    prompt = f"""
+Analyze this news article and determine if it indicates a potential supply chain disruption for the supplier "{supplier_name}" located in "{location}".
+A relevant disruption includes natural disasters (floods, earthquakes, cyclones), strikes, labor protests, factory fires, industrial accidents, or utility/power shutdowns affecting that region.
+An irrelevant match includes sports news, general unrelated business announcements, airport tail strikes with no cargo logistics relevance, metaphorical usage (e.g. "drought" of trophies/wins), or general national news with no local impact.
+
+Article Title: {title}
+Article Description: {description}
+
+Respond in this exact JSON format:
+{{
+  "relevant": true/false,
+  "reason": "a brief one-sentence reason why it is or is not relevant"
+}}
+"""
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            timeout=10.0
+        )
+        data = json.loads(response.choices[0].message.content)
+        is_relevant = data.get("relevant", True)
+        reason = data.get("reason", "")
+        print(f"  🤖 LLM Relevance Check for {supplier_name}: {'RELEVANT' if is_relevant else 'IRRELEVANT'} ({reason})")
+        return is_relevant
+    except Exception as e:
+        print(f"  ⚠️ Error checking article relevance: {e}. Defaulting to relevant.", file=sys.stderr)
+        return True
+
 DISASTER_KEYWORDS = ["flood", "cyclone", "strike", "earthquake", "storm", "shutdown", "protest", "fire", "drought"]
 
 def get_supplier_locations():
@@ -61,6 +104,7 @@ def check_risk_in_articles(articles):
                 triggered.append({
                     "keyword": keyword,
                     "headline": article.get("title"),
+                    "description": article.get("description"),
                     "url": article.get("url")
                 })
                 break
@@ -93,7 +137,14 @@ def run_monitor():
             if risks:
                 import re
                 for risk in risks:
-                    # Construct duplicate check query:
+                    # 1. LLM Relevance Check to filter out false positives
+                    title = risk["headline"]
+                    desc = risk.get("description") or ""
+                    if not check_article_relevance(title, desc, name, location):
+                        print(f"  ⏭️ Skipping irrelevant news match for {name}: '{title}'")
+                        continue
+
+                    # 2. Construct duplicate check query:
                     # Same supplier name, unresolved, and either same keyword or same article URL
                     or_conditions = [{"reason": {"$regex": f"Keyword '{risk['keyword']}'", "$options": "i"}}]
                     if risk.get("url"):
