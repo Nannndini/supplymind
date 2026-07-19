@@ -52,21 +52,21 @@ export default function LoginPage() {
       {/* Background Dot Grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#1f2030_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
 
-      <div className="w-full max-w-2xl mx-auto text-center relative z-10 mb-12">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-6 transition-all duration-300">
-          <span className="text-xl text-[#5E6AD2] select-none font-black">⚡</span>
+      <div className="w-full max-w-5xl md:max-w-6xl mx-auto text-center relative z-10 mb-16 px-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-8 transition-all duration-300">
+          <span className="text-2xl text-[#5E6AD2] select-none font-black">⚡</span>
         </div>
         
         {/* Boxed Grid Banner */}
-        <div className="w-full border border-[#1F202E] rounded-xl overflow-hidden bg-[#12131A] grid grid-cols-10 divide-x divide-[#1F202E] shadow-xl">
+        <div className="w-full border border-[#1F202E] rounded-2xl overflow-hidden bg-[#12131A] grid grid-cols-10 divide-x divide-[#1F202E] shadow-2xl">
           {"SUPPLYMIND".split("").map((char, index) => (
             <div
               key={index}
-              className={`h-20 sm:h-24 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}
+              className={`h-24 sm:h-32 md:h-40 lg:h-48 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}
               style={{ animationDelay: `${index * 0.06}s` }}
             >
               <span 
-                className={`text-2xl sm:text-3.5xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
+                className={`text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
                 style={{ animationDelay: `${index * 0.06}s` }}
               >
                 {char}
@@ -76,13 +76,13 @@ export default function LoginPage() {
         </div>
 
         {/* Caption Status Bar */}
-        <div className="flex items-center justify-between px-3 mt-4 text-zinc-550 text-[9px] sm:text-[10px] uppercase tracking-widest font-mono font-bold select-none">
+        <div className="flex items-center justify-between px-3 mt-5 text-zinc-550 text-[10px] sm:text-[11px] uppercase tracking-widest font-mono font-bold select-none">
           <div className="flex items-center gap-1.5 opacity-60">
-            <span className="text-[10px]">🔇</span>
+            <span className="text-[11px]">🔇</span>
             <span>Sound Off</span>
           </div>
-          <div className="opacity-70">
-            Tracked · Protected · Prepared
+          <div className="opacity-75 tracking-[0.2em] font-mono text-zinc-400">
+            Autonomous Threat Telemetry System
           </div>
         </div>
       </div>
