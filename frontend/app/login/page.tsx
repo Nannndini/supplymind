@@ -56,26 +56,28 @@ export default function LoginPage() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-5 transition-all duration-300">
           <span className="text-xl text-[#5E6AD2] select-none font-black">⚡</span>
         </div>
-        {loading ? (
-          <h2 className="text-3xl font-black tracking-widest text-white flex justify-center select-none">
-            {"SUPPLYMIND".split("").map((char, index) => (
-              <span
-                key={index}
-                className="animate-flow-bold"
-                style={{ animationDelay: `${index * 0.08}s` }}
-              >
+        <div className="flex justify-center items-center gap-1 sm:gap-1.5 mb-4 select-none">
+          {"SUPPLYMIND".split("").map((char, index) => (
+            <div
+              key={index}
+              className={`w-9 h-12 sm:w-11 sm:h-14 bg-[#12131A] border border-[#1F202E] flex items-center justify-center rounded-lg shadow-sm transition-all duration-300 ${loading ? "animate-flow-bold" : ""}`}
+              style={{ animationDelay: `${index * 0.06}s` }}
+            >
+              <span className="text-xl sm:text-2xl font-black tracking-normal text-white uppercase font-sans">
                 {char}
               </span>
-            ))}
-          </h2>
-        ) : (
-          <h2 className="text-3xl font-black tracking-widest text-white uppercase select-none">
-            SUPPLYMIND
-          </h2>
-        )}
-        <p className="mt-2 text-[10px] text-zinc-550 uppercase tracking-widest font-semibold font-mono">
-          Supply Chain Disruption Monitor
-        </p>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between px-2 sm:px-4 mt-4 max-w-[280px] sm:max-w-[345px] mx-auto text-zinc-500 text-[8px] sm:text-[9px] uppercase tracking-widest font-mono font-bold select-none">
+          <div className="flex items-center gap-1 opacity-60">
+            <span>🔇</span>
+            <span>Sound Off</span>
+          </div>
+          <div className="opacity-70">
+            Tracked, Protected, Prepared
+          </div>
+        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -138,19 +140,19 @@ export default function LoginPage() {
         @keyframes flow-bold {
           0%, 100% {
             transform: translateY(0);
-            color: #ffffff;
-            opacity: 0.5;
+            background-color: #12131A;
+            border-color: #1F202E;
+            box-shadow: none;
           }
           50% {
-            transform: translateY(-5px);
-            color: #5E6AD2;
-            opacity: 1;
-            text-shadow: 0 0 10px rgba(94, 106, 210, 0.6);
+            transform: translateY(-6px);
+            background-color: #161722;
+            border-color: #5E6AD2;
+            box-shadow: 0 4px 14px rgba(94, 106, 210, 0.25);
           }
         }
         .animate-flow-bold {
           animation: flow-bold 1.2s ease-in-out infinite;
-          display: inline-block;
         }
       `}} />
     </div>
