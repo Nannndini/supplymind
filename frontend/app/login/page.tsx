@@ -52,7 +52,7 @@ export default function LoginPage() {
       {/* Background Dot Grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#1f2030_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
 
-      <div className="w-full max-w-5xl md:max-w-6xl mx-auto text-center relative z-10 mb-16 px-4">
+      <div className="w-full max-w-3xl md:max-w-4xl mx-auto text-center relative z-10 mb-16 px-4">
         
         {/* Boxed Grid Banner */}
         <div className="w-full border border-[#1F202E] rounded-xl overflow-hidden bg-[#12131A] grid grid-cols-11 divide-x divide-[#1F202E] shadow-2xl">
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 style={{ 
                   animationDelay: `${(index + 1) * 0.06}s`,
                   display: "inline-block",
-                  transform: "scaleX(0.88) scaleY(1.12)"
+                  transform: "scaleX(0.92) scaleY(1.45)"
                 }}
               >
                 {char}
