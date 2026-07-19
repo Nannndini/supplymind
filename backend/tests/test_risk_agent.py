@@ -125,3 +125,58 @@ def test_risk_agent_early_exit_on_escalation(mocker):
     assert "ESCALATED: ambiguous alert details" in analysis
     assert "escalate_to_human_queue" in decision_log[0]["decision"]
     assert "exited early: escalated to human review" in exit_reason
+
+def test_risk_agent_max_rounds_reached_with_tool_calls(mocker):
+    # Test ODA loop reaching the max iterations limit (3 rounds) while executing tools
+    mock_client = mocker.Mock()
+    mocker.patch("risk_agent.get_groq_client", return_value=mock_client)
+    
+    class MockToolCall:
+        def __init__(self, id, name, arguments):
+            self.id = id
+            self.function = MockFunction(name, arguments)
+
+    class MockFunction:
+        def __init__(self, name, arguments):
+            self.name = name
+            self.arguments = arguments
+            
+    tc1 = MockToolCall("c_1", "query_supplier_history", json.dumps({"supplier_name": "TestSup"}))
+    resp1 = MockResponse("", tool_calls=[tc1])
+    resp2 = MockResponse("", tool_calls=[tc1])
+    resp3 = MockResponse("", tool_calls=[tc1])
+    
+    mock_client.chat.completions.create.side_effect = [resp1, resp2, resp3]
+    mocker.patch("os.getenv", side_effect=lambda key, default=None: "true" if key == "ALLOW_AGENTIC_TOOLS" else default)
+    
+    alert = {"reason": "Storm"}
+    supplier = {"name": "TestSup", "location": "Pune", "items_supplied": ["itemA"]}
+    inventory = []
+    
+    mocker.patch("risk_agent.query_supplier_history", return_value="history mock")
+    
+    analysis, decision_log, exit_reason = analyze_risk(alert, supplier, inventory)
+    
+    assert "RISK_SCORE: 5" in analysis
+    assert "exited: max iterations (3) reached" in exit_reason
+    assert len(decision_log) == 3
+    assert decision_log[0]["decision"] == "execute_tool"
+
+def test_risk_agent_run_risk_analyst_execution(mocker):
+    # Test the database integration wrapper run_risk_analyst
+    mock_db = mocker.Mock()
+    mocker.patch("risk_agent.alerts_collection", mock_db.alerts)
+    mocker.patch("risk_agent.suppliers_collection", mock_db.suppliers)
+    mocker.patch("risk_agent.inventory_collection", mock_db.inventory)
+    
+    mock_db.alerts.find.return_value = [{"_id": "a1", "supplier_name": "TestSup", "reason": "Crisis"}]
+    mock_db.alerts.update_one.return_value = mocker.Mock(modified_count=1)
+    mock_db.suppliers.find_one.return_value = {"name": "TestSup", "location": "Kolkata", "items_supplied": ["raw"]}
+    mock_db.inventory.find.return_value = []
+    
+    mocker.patch("risk_agent.analyze_risk", return_value=("RISK_SCORE: 8\nIMPACT: Heavy\nURGENCY: HIGH\nACTION: None\nCONFIDENCE: HIGH", [], "exited early"))
+    
+    from risk_agent import run_risk_analyst
+    run_risk_analyst()
+    
+    assert mock_db.alerts.update_one.call_count == 2

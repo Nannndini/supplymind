@@ -91,12 +91,17 @@ Create an index on the **`contracts`** collection:
 
 ---
 
-## 📊 Scalability & Performance Benchmarks (500+ Suppliers Scale)
+## 📊 Scalability & Performance Benchmarks (Synthetic Load Testing)
 
-SupplyMind has been tested and benchmarked under a synthetic load of **500+ suppliers, inventory items, and contracts** to ensure real-world viability.
+SupplyMind's concurrency architecture has been tested under a synthetic load of **500+ suppliers, inventory items, and contracts** to measure scaling behavior.
+
+> [!WARNING]
+> This demonstrates the concurrency architecture's theoretical scaling behavior under simulated load; real-world NewsAPI latency and rate limits may differ.
 
 ### Concurrency & Batching
-* **Monitor Agent**: Previously, scanning 500 suppliers sequentially took over **50 seconds** due to single-threaded network overhead. With our updated `ThreadPoolExecutor`-based concurrent batching (up to 20 concurrent threads), the total location news fetch latency is reduced to **3.2 seconds** (a ~15x performance increase).
+* **Monitor Agent Concurrency**: To evaluate performance, we ran a synthetic benchmark of 100 location fetches with a simulated typical NewsAPI response latency of 120ms.
+  * **Sequential Fetch**: Took **12.10 seconds** to complete.
+  * **Concurrent Fetch (`ThreadPoolExecutor` with 20 threads)**: Completed in **0.62 seconds**, representing a **19.47x speedup**.
 * **Rate-Limit Handling**: The Monitor Agent intercepts HTTP 429 status codes from NewsAPI, performing exponential backoff (`3s`, `6s`, `9s`) to prevent service blockages.
 
 ---
