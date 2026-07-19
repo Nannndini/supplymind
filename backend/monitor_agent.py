@@ -1,9 +1,11 @@
 import os
 import sys
+import time
 import httpx
 from dotenv import load_dotenv
 from database import suppliers_collection, alerts_collection
 from models import alert_model
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Ensure UTF-8 output on Windows consoles
 if hasattr(sys.stdout, 'reconfigure'):
@@ -64,9 +66,8 @@ def get_supplier_locations():
     suppliers = list(suppliers_collection.find({}, {"name": 1, "location": 1}))
     return suppliers
 
-def fetch_news_for_location(location):
+def fetch_news_for_location_with_retry(location, client=None):
     if not NEWS_API_KEY:
-        print("⚠️ NEWS_API_KEY is not set. Skipping news fetch.")
         return []
     
     url = "https://newsapi.org/v2/everything"
@@ -78,19 +79,31 @@ def fetch_news_for_location(location):
         "sortBy": "publishedAt",
         "pageSize": 5
     }
-    try:
-        response = httpx.get(url, params=params, timeout=10.0)
-        if response.status_code != 200:
-            print(f"❌ NewsAPI returned status {response.status_code}: {response.text}")
+    
+    local_client = client or httpx.Client(timeout=10.0)
+    
+    for attempt in range(3):
+        try:
+            response = local_client.get(url, params=params)
+            if response.status_code == 429:
+                backoff_time = (attempt + 1) * 3
+                print(f"⚠️ Rate limited (429) for location '{location}'. Retrying in {backoff_time}s...")
+                time.sleep(backoff_time)
+                continue
+            elif response.status_code != 200:
+                print(f"❌ NewsAPI returned status {response.status_code} for {location}: {response.text}")
+                return []
+            data = response.json()
+            return data.get("articles", [])
+        except httpx.RequestError as exc:
+            print(f"❌ HTTP request failed for {location}: {exc}")
+            time.sleep(1)
+        except Exception as exc:
+            print(f"❌ Error fetching news for {location}: {exc}")
             return []
-        data = response.json()
-        return data.get("articles", [])
-    except httpx.RequestError as exc:
-        print(f"❌ HTTP request failed while fetching news for {location}: {exc}")
-        return []
-    except Exception as exc:
-        print(f"❌ Unexpected error while fetching news: {exc}")
-        return []
+            
+    print(f"❌ Failed to fetch news for {location} after 3 attempts due to rate limit or connection issues.")
+    return []
 
 def check_risk_in_articles(articles):
     triggered = []
@@ -122,60 +135,70 @@ def run_monitor():
         print(f"❌ Failed to query database for suppliers: {e}")
         return
     
-    for supplier in suppliers:
+    print(f"  Processing {len(suppliers)} suppliers concurrently...")
+
+    max_workers = min(20, len(suppliers) or 1)
+    results = []
+    
+    with httpx.Client(timeout=10.0) as client:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_supplier = {
+                executor.submit(fetch_news_for_location_with_retry, s.get("location"), client): s
+                for s in suppliers if s.get("name") and s.get("location")
+            }
+            
+            for future in as_completed(future_to_supplier):
+                supplier = future_to_supplier[future]
+                name = supplier.get("name")
+                try:
+                    articles = future.result()
+                    results.append((supplier, articles))
+                except Exception as exc:
+                    print(f"❌ Supplier {name} generated an exception: {exc}")
+                    results.append((supplier, []))
+    
+    for supplier, articles in results:
         name = supplier.get("name")
         location = supplier.get("location")
-        if not name or not location:
-            continue
-            
-        print(f"  Checking news for {name} ({location})...")
+        risks = check_risk_in_articles(articles)
         
-        try:
-            articles = fetch_news_for_location(location)
-            risks = check_risk_in_articles(articles)
-            
-            if risks:
-                import re
-                for risk in risks:
-                    # 1. LLM Relevance Check to filter out false positives
-                    title = risk["headline"]
-                    desc = risk.get("description") or ""
-                    if not check_article_relevance(title, desc, name, location):
-                        print(f"  ⏭️ Skipping irrelevant news match for {name}: '{title}'")
+        if risks:
+            import re
+            for risk in risks:
+                title = risk["headline"]
+                desc = risk.get("description") or ""
+                if not check_article_relevance(title, desc, name, location):
+                    print(f"  ⏭️ Skipping irrelevant news match for {name}: '{title}'")
+                    continue
+
+                or_conditions = [{"reason": {"$regex": f"Keyword '{risk['keyword']}'", "$options": "i"}}]
+                if risk.get("url"):
+                    or_conditions.append({"suggested_action": {"$regex": re.escape(risk["url"])}})
+                
+                duplicate_query = {
+                    "supplier_name": name,
+                    "resolved": False,
+                    "$or": or_conditions
+                }
+                
+                try:
+                    existing = alerts_collection.find_one(duplicate_query)
+                    if existing:
+                        print(f"  ⏭️ Skipping duplicate unresolved alert for {name} (keyword: '{risk['keyword']}')")
                         continue
+                except Exception as exc:
+                    print(f"  ⚠️ Failed to check duplicate alert: {exc}")
 
-                    # 2. Construct duplicate check query:
-                    # Same supplier name, unresolved, and either same keyword or same article URL
-                    or_conditions = [{"reason": {"$regex": f"Keyword '{risk['keyword']}'", "$options": "i"}}]
-                    if risk.get("url"):
-                        or_conditions.append({"suggested_action": {"$regex": re.escape(risk["url"])}})
-                    
-                    duplicate_query = {
-                        "supplier_name": name,
-                        "resolved": False,
-                        "$or": or_conditions
-                    }
-                    
-                    try:
-                        existing = alerts_collection.find_one(duplicate_query)
-                        if existing:
-                            print(f"  ⏭️ Skipping duplicate unresolved alert for {name} (keyword: '{risk['keyword']}')")
-                            continue
-                    except Exception as exc:
-                        print(f"  ⚠️ Failed to check duplicate alert: {exc}")
-
-                    alert = alert_model(
-                        supplier_name=name,
-                        risk_level="HIGH",
-                        reason=f"Keyword '{risk['keyword']}' found in news: {risk['headline']}",
-                        suggested_action=f"Check supplier status immediately. News: {risk['url']}"
-                    )
-                    alerts_collection.insert_one(alert)
-                    print(f"  ⚠️  ALERT created for {name}: {risk['keyword']}")
-            else:
-                print(f"  ✅ No risks found for {name}")
-        except Exception as e:
-            print(f"  ❌ Error processing news for supplier {name}: {e}")
+                alert = alert_model(
+                    supplier_name=name,
+                    risk_level="HIGH",
+                    reason=f"Keyword '{risk['keyword']}' found in news: {risk['headline']}",
+                    suggested_action=f"Check supplier status immediately. News: {risk['url']}"
+                )
+                alerts_collection.insert_one(alert)
+                print(f"  ⚠️  ALERT created for {name}: {risk['keyword']}")
+        else:
+            print(f"  ✅ No risks found for {name}")
     
     print("✅ Monitor Agent done.")
 

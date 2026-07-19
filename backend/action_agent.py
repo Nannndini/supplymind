@@ -15,11 +15,7 @@ if hasattr(sys.stderr, 'reconfigure'):
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-class ActionPlanSchema(BaseModel):
-    email_subject: str
-    email_body: str
-    backup_plan: str
-    estimated_delay: str
+from models import ActionPlanSchema
 
 def get_groq_client():
     if not GROQ_API_KEY:
@@ -42,12 +38,17 @@ def draft_action(alert, supplier, alternates):
         print("⚠️ Groq client is not initialized (missing GROQ_API_KEY). Returning fallback action plan.")
         alternates_list = [s.get('name') for s in alternates]
         alt_str = ", ".join(alternates_list) if alternates_list else "None available"
+        fallback_obj = ActionPlanSchema(
+            email_subject="Supply Chain Status Update Request",
+            email_body="Dear Supplier Team, we are tracking reports of possible disruptions near your location. Could you please confirm if your operations are impacted and provide an estimated delivery timeline? Thank you.",
+            backup_plan=f"Contact alternate suppliers in this category: {alt_str}.",
+            estimated_delay="TBD"
+        )
         return (
-            "EMAIL_SUBJECT: Supply Chain Status Update Request\n"
-            "EMAIL_BODY: Dear Supplier Team, we are tracking reports of possible disruptions near your location. "
-            "Could you please confirm if your operations are impacted and provide an estimated delivery timeline? Thank you.\n"
-            f"BACKUP_PLAN: Contact alternate suppliers in this category: {alt_str}.\n"
-            "ESTIMATED_DELAY: TBD"
+            f"EMAIL_SUBJECT: {fallback_obj.email_subject}\n"
+            f"EMAIL_BODY: {fallback_obj.email_body}\n"
+            f"BACKUP_PLAN: {fallback_obj.backup_plan}\n"
+            f"ESTIMATED_DELAY: {fallback_obj.estimated_delay}"
         )
         
     prompt = f"""
@@ -63,11 +64,13 @@ Supplier: {supplier.get('name', 'Unknown')} in {supplier.get('location', 'Unknow
 Alternate suppliers available: {[s.get('name', '') + ' in ' + s.get('location', '') for s in alternates]}
 """
     
-    for attempt in range(2):
+    messages = [{"role": "user", "content": prompt}]
+    raw_content = "{}"
+    for attempt in range(3):
         try:
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 response_format={"type": "json_object"},
                 timeout=15.0
             )
@@ -88,17 +91,26 @@ Alternate suppliers available: {[s.get('name', '') + ' in ' + s.get('location', 
             
         except Exception as e:
             print(f"❌ Attempt {attempt + 1} failed for action plan generation: {e}", file=sys.stderr)
-            if attempt == 1:
+            error_msg = f"Your previous response failed Pydantic validation: {str(e)}. Please correct your output and return valid JSON with keys: email_subject, email_body, backup_plan, estimated_delay."
+            messages.append({"role": "assistant", "content": raw_content})
+            messages.append({"role": "user", "content": error_msg})
+            
+            if attempt == 2:
                 # Log and return fallback
-                print("⚠️ [ActionAgent] Both LLM validation attempts failed. Returning fallback action plan.", file=sys.stderr)
+                print("⚠️ [ActionAgent] All 3 LLM validation attempts failed. Returning fallback action plan.", file=sys.stderr)
                 alternates_list = [s.get('name') for s in alternates]
                 alt_str = ", ".join(alternates_list) if alternates_list else "None available"
+                fallback_obj = ActionPlanSchema(
+                    email_subject="Supply Chain Status Update Request",
+                    email_body="Dear Supplier Team, we are tracking reports of possible disruptions near your location. Could you please confirm if your operations are impacted and provide an estimated delivery timeline? Thank you.",
+                    backup_plan=f"Contact alternate suppliers in this category: {alt_str}.",
+                    estimated_delay="TBD"
+                )
                 return (
-                    "EMAIL_SUBJECT: Supply Chain Status Update Request\n"
-                    "EMAIL_BODY: Dear Supplier Team, we are tracking reports of possible disruptions near your location. "
-                    "Could you please confirm if your operations are impacted and provide an estimated delivery timeline? Thank you.\n"
-                    f"BACKUP_PLAN: Contact alternate suppliers in this category: {alt_str}.\n"
-                    "ESTIMATED_DELAY: TBD"
+                    f"EMAIL_SUBJECT: {fallback_obj.email_subject}\n"
+                    f"EMAIL_BODY: {fallback_obj.email_body}\n"
+                    f"BACKUP_PLAN: {fallback_obj.backup_plan}\n"
+                    f"ESTIMATED_DELAY: {fallback_obj.estimated_delay}"
                 )
 
 def run_action_agent():

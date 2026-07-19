@@ -4,3 +4,6 @@ frontend/.next/
 frontend/node_modules/
 __pycache__/
 *.pyc
+backend/.coverage
+backend/.pytest_cache/
+.pytest_cache/

@@ -42,3 +42,19 @@ def contract_model(supplier_name, contract_id, effective_date, expiration_date, 
         "contract_text": contract_text,
         "created_at": datetime.utcnow()
     }
+
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class RiskAnalysisSchema(BaseModel):
+    risk_score: int = Field(..., ge=1, le=10)
+    impact: str = Field(..., min_length=5)
+    urgency: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    action: str = Field(..., min_length=5)
+    confidence: Literal["HIGH", "MEDIUM", "LOW"]
+
+class ActionPlanSchema(BaseModel):
+    email_subject: str = Field(..., min_length=5)
+    email_body: str = Field(..., min_length=10)
+    backup_plan: str = Field(..., min_length=5)
+    estimated_delay: str = Field(..., min_length=1)
