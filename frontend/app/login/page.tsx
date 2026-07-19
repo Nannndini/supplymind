@@ -48,24 +48,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center py-20 px-4 sm:px-6 lg:px-8 bg-[#FAFAFA] min-h-screen font-sans antialiased selection:bg-indigo-500/10 selection:text-indigo-900">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white border border-zinc-200/80 shadow-sm mb-5 transition-all duration-300">
-          <span className="text-2xl select-none">⚡</span>
+    <div className="flex-1 flex flex-col justify-center py-20 px-4 sm:px-6 lg:px-8 bg-[#0D0E14] min-h-screen font-sans antialiased selection:bg-[#5E6AD2]/25 selection:text-white relative">
+      {/* Background Dot Grid */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1f2030_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-5 transition-all duration-300">
+          <span className="text-xl text-[#5E6AD2] select-none font-black">⚡</span>
         </div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900">
+        <h2 className="text-3xl font-extrabold tracking-tight text-white">
           SupplyMind
         </h2>
-        <p className="mt-2 text-xs text-zinc-400 uppercase tracking-widest font-semibold">
+        <p className="mt-2 text-[10px] text-zinc-550 uppercase tracking-widest font-semibold font-mono">
           Supply Chain Disruption Monitor
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white border border-zinc-200/80 p-10 shadow-sm rounded-2xl overflow-hidden relative">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-[#12131A] border border-[#1F202E] p-10 shadow-xl rounded-2xl overflow-hidden">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 font-mono">
                 Username
               </label>
               <input
@@ -73,13 +76,13 @@ export default function LoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="appearance-none block w-full px-4 py-3 border border-zinc-200 rounded-xl bg-white text-zinc-900 placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm font-sans tracking-wide"
+                className="appearance-none block w-full px-4 py-3 border border-[#1F202E] rounded-xl bg-[#0D0E14] text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] transition-all duration-200 text-sm font-sans tracking-wide"
                 placeholder="e.g. admin"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 font-mono">
                 Password
               </label>
               <input
@@ -87,13 +90,13 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none block w-full px-4 py-3 border border-zinc-200 rounded-xl bg-white text-zinc-900 placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 text-sm font-sans tracking-wide"
+                className="appearance-none block w-full px-4 py-3 border border-[#1F202E] rounded-xl bg-[#0D0E14] text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#5E6AD2]/10 focus:border-[#5E6AD2] transition-all duration-200 text-sm font-sans tracking-wide"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="text-red-600 text-xs bg-red-50 border border-red-100 rounded-xl p-3 text-center flex items-center justify-center gap-2">
+              <div className="text-red-400 text-xs bg-red-950/20 border border-red-900/30 rounded-xl p-3 text-center flex items-center justify-center gap-2 font-mono">
                 <span>⚠️</span> {error}
               </div>
             )}
@@ -102,7 +105,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 cursor-pointer active:scale-98"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-[#5E6AD2] hover:bg-[#4E5AC2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5E6AD2] transition-all duration-200 disabled:opacity-50 cursor-pointer active:scale-98"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
