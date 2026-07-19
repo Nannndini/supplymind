@@ -53,6 +53,8 @@ GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxx
 NEWS_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxx
 JWT_SECRET_KEY=yoursupersecurejwtsecretkeyhere
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=yoursecuraadminpasswordhere
 ```
 
 ---

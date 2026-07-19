@@ -2,9 +2,12 @@ import sys
 import os
 import random
 from datetime import datetime
+from dotenv import load_dotenv
 from database import suppliers_collection, inventory_collection, contracts_collection, alerts_collection, users_collection
 from models import supplier_model, inventory_model, contract_model
 from auth import hash_password
+
+load_dotenv()
 
 CATEGORIES = ["Packaging", "Raw Material", "Printing", "Electronics", "Logistics", "Chemicals", "Hardware"]
 LOCATIONS = ["Mumbai", "Chennai", "Hyderabad", "Bangalore", "Delhi", "Pune", "Kolkata", "Ahmedabad", "Jaipur", "Surat"]
@@ -66,6 +69,13 @@ LATE PENALTY: A late penalty of {random.uniform(1.0, 3.0):.1f}% per week will be
     return suppliers, inventory, contracts
 
 def seed_db():
+    # Retrieve credentials from environment variables and fail fast
+    admin_username = os.getenv("ADMIN_USERNAME", "admin")
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    
+    if not admin_password:
+        raise ValueError("❌ ADMIN_PASSWORD environment variable is not set. Seeding aborted.")
+
     print("🧹 Cleaning database collections...")
     suppliers_collection.delete_many({})
     inventory_collection.delete_many({})
@@ -83,11 +93,11 @@ def seed_db():
         
         # Seed default user
         default_user = {
-            "username": "admin",
-            "password_hash": hash_password("admin123")
+            "username": admin_username,
+            "password_hash": hash_password(admin_password)
         }
         users_collection.insert_one(default_user)
-        print("👤 Seeded default user (admin/admin123) successfully.")
+        print(f"👤 Seeded default user ({admin_username}) successfully.")
         
         if len(sys.argv) > 1 and sys.argv[1] == "--populate-embeddings":
             print("🔄 Generating embeddings for 500+ items (this will take a while and consumes API quota)...")

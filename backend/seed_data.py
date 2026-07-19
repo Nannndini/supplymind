@@ -1,6 +1,18 @@
+import os
+from dotenv import load_dotenv
 from database import suppliers_collection, inventory_collection, contracts_collection, alerts_collection, users_collection, populate_embeddings
 from models import supplier_model, inventory_model, contract_model
 from auth import hash_password
+
+# Load environment variables
+load_dotenv()
+
+# Retrieve credentials from environment variables and fail fast
+admin_username = os.getenv("ADMIN_USERNAME", "admin")
+admin_password = os.getenv("ADMIN_PASSWORD")
+
+if not admin_password:
+    raise ValueError("❌ ADMIN_PASSWORD environment variable is not set. Seeding aborted.")
 
 # Clear collections for clean seeding
 print("🧹 Cleaning existing collections...")
@@ -83,14 +95,15 @@ try:
     
     # Seed default user
     default_user = {
-        "username": "admin",
-        "password_hash": hash_password("admin123")
+        "username": admin_username,
+        "password_hash": hash_password(admin_password)
     }
     users_collection.insert_one(default_user)
-    print("👤 Seeded default user (admin/admin123) in MongoDB.")
+    print(f"👤 Seeded default user ({admin_username}) in MongoDB.")
     
     print("🔄 Generating embeddings...")
     populate_embeddings()
     print("🎉 Seed data populated successfully!")
 except Exception as e:
     print("❌ Error during seeding:", e)
+    raise e

@@ -16,7 +16,7 @@ from action_agent import run_action_agent
 from change_streams import start_change_stream_listener
 from bson import ObjectId
 from pydantic import BaseModel
-from auth import get_current_user, verify_password, create_jwt_token
+from auth import get_current_user, verify_password, create_jwt_token, hash_password
 
 app = FastAPI(title="SupplyMind API")
 
@@ -92,6 +92,28 @@ def login(payload: LoginRequest):
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid credentials"
     )
+
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/signup")
+def signup(payload: SignupRequest):
+    username = payload.username.strip().lower()
+    if not username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+    if len(payload.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if users_collection.find_one({"username": username}):
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    hashed_pwd = hash_password(payload.password)
+    users_collection.insert_one({
+        "username": username,
+        "password_hash": hashed_pwd
+    })
+    token = create_jwt_token(username)
+    return {"token": token, "username": username}
 
 @app.get("/suppliers")
 def get_suppliers(user: str = Depends(get_current_user)):
