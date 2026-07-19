@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -10,66 +10,12 @@ interface Inventory { _id: string; item_name: string; supplier_name: string; qua
 interface Alert { _id: string; supplier_name: string; risk_level: string; reason: string; resolved: boolean; risk_analysis?: string; action_plan?: string; }
 interface Contract { _id: string; supplier_name: string; contract_id: string; effective_date: string; expiration_date: string; contract_text: string; }
 
-function Card3D({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
-  const [shadow, setShadow] = useState("none");
-  const [glintStyle, setGlintStyle] = useState<React.CSSProperties>({
-    opacity: 0,
-    transform: "translate(-50%, -50%)",
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const rotateX = ((centerY - y) / centerY) * 4; // Max 4 degrees tilt
-    const rotateY = ((x - centerX) / centerX) * 4; // Max 4 degrees tilt
-    
-    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`);
-    setShadow(`${(x - centerX) / 4}px ${(y - centerY) / 4}px 25px rgba(6, 182, 212, 0.08)`);
-    setGlintStyle({
-      opacity: 1,
-      left: `${x}px`,
-      top: `${y}px`,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setTransform("perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)");
-    setShadow("none");
-    setGlintStyle(prev => ({ ...prev, opacity: 0 }));
-  };
-
+function Card({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
     <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform,
-        boxShadow: shadow,
-        transition: "transform 0.15s ease-out, box-shadow 0.15s ease-out",
-        willChange: "transform, box-shadow",
-        transformStyle: "preserve-3d",
-        ...style
-      }}
-      className={`relative overflow-hidden ${className}`}
+      style={style}
+      className={`bg-white border border-zinc-200/80 rounded-2xl p-8 hover:shadow-sm hover:border-zinc-300/80 transition-all duration-200 ${className}`}
     >
-      {/* Dynamic light reflection glint */}
-      <div
-        className="absolute w-[200px] h-[200px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none transition-opacity duration-300"
-        style={{
-          ...glintStyle,
-          transform: "translate(-50%, -50%)",
-        }}
-      />
       {children}
     </div>
   );
@@ -77,59 +23,51 @@ function Card3D({ children, className = "", style = {} }: { children: React.Reac
 
 function TelemetryMap({ suppliers, alerts }: { suppliers: Supplier[]; alerts: Alert[] }) {
   const hasAlert = (supplierName: string) => {
-    return alerts.some(a => a.supplier_name.toLowerCase() === supplierName.toLowerCase());
+    return alerts.some(a => a.supplier_name.toLowerCase() === supplierName.toLowerCase() && !a.resolved);
   };
 
   return (
     <div className="relative w-full h-full flex flex-col justify-between">
-      <div className="relative h-64 w-full flex items-center justify-center bg-zinc-950/80 rounded-2xl border border-zinc-900/60 overflow-hidden shadow-inner">
+      <div className="relative h-64 w-full flex items-center justify-center bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden shadow-inner">
         {/* Isometric Grid Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
+        <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
         
         {/* Connection flow lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 280">
           {/* Connection Lines with Dash Flow */}
-          <path d="M 200 130 L 80 70" fill="none" stroke={hasAlert("RajPlastics") ? "rgba(244, 63, 94, 0.4)" : "rgba(6, 182, 212, 0.3)"} strokeWidth="1.5" />
-          <path d="M 200 130 L 80 70" fill="none" stroke={hasAlert("RajPlastics") ? "#f43f5e" : "#06b6d4"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow" />
+          <path d="M 200 130 L 80 70" fill="none" stroke={hasAlert("RajPlastics") ? "rgba(239, 68, 68, 0.2)" : "rgba(79, 70, 229, 0.15)"} strokeWidth="1.5" />
+          <path d="M 200 130 L 80 70" fill="none" stroke={hasAlert("RajPlastics") ? "#EF4444" : "#4F46E5"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow" />
 
-          <path d="M 200 130 L 320 70" fill="none" stroke={hasAlert("ChennaiPolymers") ? "rgba(244, 63, 94, 0.4)" : "rgba(6, 182, 212, 0.3)"} strokeWidth="1.5" />
-          <path d="M 200 130 L 320 70" fill="none" stroke={hasAlert("ChennaiPolymers") ? "#f43f5e" : "#06b6d4"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow-fast" />
+          <path d="M 200 130 L 320 70" fill="none" stroke={hasAlert("ChennaiPolymers") ? "rgba(239, 68, 68, 0.2)" : "rgba(79, 70, 229, 0.15)"} strokeWidth="1.5" />
+          <path d="M 200 130 L 320 70" fill="none" stroke={hasAlert("ChennaiPolymers") ? "#EF4444" : "#4F46E5"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow-fast" />
 
-          <path d="M 200 130 L 200 220" fill="none" stroke={hasAlert("HydroLabels") ? "rgba(244, 63, 94, 0.4)" : "rgba(6, 182, 212, 0.3)"} strokeWidth="1.5" />
-          <path d="M 200 130 L 200 220" fill="none" stroke={hasAlert("HydroLabels") ? "#f43f5e" : "#06b6d4"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow" />
+          <path d="M 200 130 L 200 220" fill="none" stroke={hasAlert("HydroLabels") ? "rgba(239, 68, 68, 0.2)" : "rgba(79, 70, 229, 0.15)"} strokeWidth="1.5" />
+          <path d="M 200 130 L 200 220" fill="none" stroke={hasAlert("HydroLabels") ? "#EF4444" : "#4F46E5"} strokeWidth="2" strokeDasharray="5, 8" className="animate-dash-flow" />
 
           {/* Central Hub Core */}
-          <circle cx="200" cy="130" r="14" fill="#09090b" stroke="#06b6d4" strokeWidth="2.5" />
-          <circle cx="200" cy="130" r="22" fill="none" stroke="#06b6d4" strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow animate-origin-central" />
-          <circle cx="200" cy="130" r="6" fill="#06b6d4" className="animate-pulse" />
+          <circle cx="200" cy="130" r="10" fill="#FFFFFF" stroke="#4F46E5" strokeWidth="2.5" />
+          <circle cx="200" cy="130" r="5" fill="#4F46E5" />
 
           {/* Supplier Nodes */}
           {/* RajPlastics */}
-          <circle cx="80" cy="70" r="8" fill="#09090b" stroke={hasAlert("RajPlastics") ? "#f43f5e" : "#10b981"} strokeWidth="2" />
-          <circle cx="80" cy="70" r="14" fill="none" stroke={hasAlert("RajPlastics") ? "#f43f5e" : "#10b981"} strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow animate-origin-raj" />
-          <circle cx="80" cy="70" r="3" fill={hasAlert("RajPlastics") ? "#f43f5e" : "#10b981"} />
+          <circle cx="80" cy="70" r="7" fill="#FFFFFF" stroke={hasAlert("RajPlastics") ? "#EF4444" : "#10B981"} strokeWidth="2" />
+          <circle cx="80" cy="70" r="3.5" fill={hasAlert("RajPlastics") ? "#EF4444" : "#10B981"} />
 
           {/* ChennaiPolymers */}
-          <circle cx="320" cy="70" r="8" fill="#09090b" stroke={hasAlert("ChennaiPolymers") ? "#f43f5e" : "#10b981"} strokeWidth="2" />
-          <circle cx="320" cy="70" r="14" fill="none" stroke={hasAlert("ChennaiPolymers") ? "#f43f5e" : "#10b981"} strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow animate-origin-chennai" />
-          <circle cx="320" cy="70" r="3" fill={hasAlert("ChennaiPolymers") ? "#f43f5e" : "#10b981"} />
+          <circle cx="320" cy="70" r="7" fill="#FFFFFF" stroke={hasAlert("ChennaiPolymers") ? "#EF4444" : "#10B981"} strokeWidth="2" />
+          <circle cx="320" cy="70" r="3.5" fill={hasAlert("ChennaiPolymers") ? "#EF4444" : "#10B981"} />
 
           {/* HydroLabels */}
-          <circle cx="200" cy="220" r="8" fill="#09090b" stroke={hasAlert("HydroLabels") ? "#f43f5e" : "#10b981"} strokeWidth="2" />
-          <circle cx="200" cy="220" r="14" fill="none" stroke={hasAlert("HydroLabels") ? "#f43f5e" : "#10b981"} strokeWidth="1" strokeOpacity="0.4" className="animate-ping-slow animate-origin-hydro" />
-          <circle cx="200" cy="220" r="3" fill={hasAlert("HydroLabels") ? "#f43f5e" : "#10b981"} />
+          <circle cx="200" cy="220" r="7" fill="#FFFFFF" stroke={hasAlert("HydroLabels") ? "#EF4444" : "#10B981"} strokeWidth="2" />
+          <circle cx="200" cy="220" r="3.5" fill={hasAlert("HydroLabels") ? "#EF4444" : "#10B981"} />
         </svg>
 
-        {/* CSS Animations injected for dashes & pings */}
+        {/* CSS Animations injected for dashes */}
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes dash-animation {
             to {
               stroke-dashoffset: -40;
             }
-          }
-          @keyframes ping-slow {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(1.6); opacity: 0; }
           }
           .animate-dash-flow {
             animation: dash-animation 2s linear infinite;
@@ -137,46 +75,31 @@ function TelemetryMap({ suppliers, alerts }: { suppliers: Supplier[]; alerts: Al
           .animate-dash-flow-fast {
             animation: dash-animation 1.2s linear infinite;
           }
-          .animate-ping-slow {
-            animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
-          }
-          .animate-origin-raj {
-            transform-origin: 80px 70px;
-          }
-          .animate-origin-chennai {
-            transform-origin: 320px 70px;
-          }
-          .animate-origin-hydro {
-            transform-origin: 200px 220px;
-          }
-          .animate-origin-central {
-            transform-origin: 200px 130px;
-          }
         `}} />
 
         {/* Hover-revealed overlay badges */}
-        <div className="absolute top-2 left-2 text-[9px] uppercase tracking-wider text-zinc-500 bg-zinc-900/60 border border-zinc-800/80 px-2 py-0.5 rounded">
-          Supply Chain Nodes Map
+        <div className="absolute top-3 left-3 text-[10px] uppercase tracking-wider text-zinc-400 bg-white border border-zinc-200 px-2 py-0.5 rounded shadow-sm">
+          Node Telemetry Map
         </div>
         
         {/* Floating Labels over Nodes */}
         <div className="absolute" style={{ left: "12%", top: "15%" }}>
-          <p className="text-[10px] font-bold text-white leading-none">RajPlastics</p>
-          <p className="text-[8px] text-zinc-500 leading-none mt-0.5">Mumbai</p>
+          <p className="text-[10px] font-bold text-zinc-800 leading-none">RajPlastics</p>
+          <p className="text-[8px] text-zinc-400 leading-none mt-1">Mumbai</p>
         </div>
 
         <div className="absolute" style={{ right: "12%", top: "15%" }}>
-          <p className="text-[10px] font-bold text-white leading-none text-right">ChennaiPolymers</p>
-          <p className="text-[8px] text-zinc-500 text-right leading-none mt-0.5">Chennai</p>
+          <p className="text-[10px] font-bold text-zinc-800 leading-none text-right">ChennaiPolymers</p>
+          <p className="text-[8px] text-zinc-400 text-right leading-none mt-1">Chennai</p>
         </div>
 
         <div className="absolute" style={{ left: "calc(50% - 25px)", top: "calc(78% + 14px)" }}>
-          <p className="text-[10px] font-bold text-white leading-none text-center">HydroLabels</p>
-          <p className="text-[8px] text-zinc-500 text-center leading-none mt-0.5">Hyderabad</p>
+          <p className="text-[10px] font-bold text-zinc-800 leading-none text-center">HydroLabels</p>
+          <p className="text-[8px] text-zinc-400 text-center leading-none mt-1">Hyderabad</p>
         </div>
 
-        <div className="absolute" style={{ left: "calc(50% - 25px)", top: "calc(46% - 22px)" }}>
-          <p className="text-[9px] font-extrabold text-cyan-400 leading-none text-center tracking-wider">AI CORE</p>
+        <div className="absolute" style={{ left: "calc(50% - 25px)", top: "calc(46% - 20px)" }}>
+          <p className="text-[9px] font-bold text-indigo-600 leading-none text-center tracking-wider bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">AI CORE</p>
         </div>
       </div>
     </div>
@@ -338,57 +261,46 @@ export default function Home() {
     setRunning(false);
   };
 
-  const riskColor = (level: string) => level === "CRITICAL" ? "bg-red-600" : level === "HIGH" ? "bg-orange-500" : level === "MEDIUM" ? "bg-yellow-500" : "bg-green-500";
-
   const highlightText = (text: string, query: string) => {
     if (!query.trim()) return text;
     const regex = new RegExp(`(${query})`, "gi");
     const parts = text.split(regex);
     return parts.map((part, i) => 
-      regex.test(part) ? <mark key={i} className="bg-cyan-500/20 text-cyan-200 border-b border-cyan-400 px-0.5 rounded font-bold">{part}</mark> : part
+      regex.test(part) ? <mark key={i} className="bg-indigo-100 text-indigo-800 border-b border-indigo-400 px-0.5 rounded font-bold">{part}</mark> : part
     );
   };
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-[#040407] text-white flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#FAFAFA] text-zinc-900 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
-          <span className="animate-spin inline-block w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full" />
-          <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Verifying Connection...</p>
+          <span className="animate-spin inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Verifying Connection...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#040407] text-zinc-100 p-6 relative overflow-hidden font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Background radial glowing spotlights */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[700px] h-[700px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
-      
-      {/* Digital Grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f0f13_1px,transparent_1px),linear-gradient(to_bottom,#0f0f13_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_80%,transparent_100%)] opacity-20 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto z-10 relative space-y-6">
+    <main className="min-h-screen bg-[#FAFAFA] text-zinc-900 px-8 py-16 font-sans antialiased selection:bg-indigo-500/10 selection:text-indigo-900">
+      <div className="max-w-6xl mx-auto space-y-20">
+        
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-900/80 pb-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 shadow-xl shadow-cyan-950/10">
-                <span className="text-2xl text-cyan-400 select-none">⚡</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
-                  SupplyMind
-                  <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Agent Core v1.2
-                  </span>
-                </h1>
-                <p className="text-zinc-500 text-xs mt-0.5">
-                  AI-Powered Risk Analysis & Supplier Disruption Monitor · Welcome, <span className="text-cyan-400 font-bold">{username}</span>
-                </p>
-              </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-zinc-200/80 pb-10">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white border border-zinc-200/80 shadow-sm">
+              <span className="text-2xl select-none">⚡</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-3">
+                SupplyMind
+                <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  Agent Core v1.2
+                </span>
+              </h1>
+              <p className="text-zinc-400 text-xs mt-1 font-medium">
+                AI-Powered Risk Analysis & Supplier Disruption Monitor · Welcome, <span className="text-indigo-600 font-bold">{username}</span>
+              </p>
             </div>
           </div>
           
@@ -396,11 +308,11 @@ export default function Home() {
             <button
               onClick={runPipeline}
               disabled={running}
-              className="bg-white hover:bg-zinc-200 text-zinc-950 disabled:opacity-50 px-5 py-3 rounded-xl font-bold text-xs transition duration-200 shadow-xl shadow-white/5 flex items-center gap-2 cursor-pointer active:scale-98"
+              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white disabled:opacity-50 px-5 py-3 rounded-xl font-bold text-xs transition duration-200 shadow-sm flex items-center gap-2 cursor-pointer active:scale-98"
             >
               {running ? (
                 <>
-                  <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full" />
+                  <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
                   Syncing Agents...
                 </>
               ) : (
@@ -409,144 +321,138 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Execute Monitoring Pipeline
+                  Execute Pipeline
                 </>
               )}
             </button>
             <button
               onClick={handleLogout}
-              className="border border-zinc-800/80 bg-zinc-900/40 hover:bg-zinc-900 text-zinc-300 px-4 py-3 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center gap-2 active:scale-98"
+              className="border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-650 px-5 py-3 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center gap-2 active:scale-98 shadow-sm"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
               Sign Out
             </button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-2xl p-5 border border-zinc-900 shadow-xl flex flex-col justify-between">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="flex flex-col justify-between">
             <div className="flex justify-between items-start">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Monitored Suppliers</p>
-              <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+              <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Monitored Suppliers</p>
+              <span className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </span>
             </div>
-            <div className="mt-4">
-              <p className="text-3xl font-black text-white">{suppliers.length}</p>
-              <div className="w-full bg-zinc-950/60 rounded-full h-1 mt-4 border border-zinc-900">
-                <div className="bg-cyan-500 h-full rounded-full w-[80%] shadow-lg shadow-cyan-500/50" />
+            <div className="mt-6">
+              <p className="text-3xl font-extrabold text-zinc-900 tracking-tight">{suppliers.length}</p>
+              <div className="w-full bg-zinc-100 rounded-full h-1 mt-4">
+                <div className="bg-indigo-500 h-full rounded-full w-[80%]" />
               </div>
             </div>
-          </Card3D>
+          </Card>
           
-          <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-2xl p-5 border border-zinc-900 shadow-xl flex flex-col justify-between">
+          <Card className="flex flex-col justify-between">
             <div className="flex justify-between items-start">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Inventory SKUs</p>
-              <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Inventory SKUs</p>
+              <span className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </span>
             </div>
-            <div className="mt-4">
-              <p className="text-3xl font-black text-white">{inventory.length}</p>
-              <div className="w-full bg-zinc-950/60 rounded-full h-1 mt-4 border border-zinc-900">
-                <div className="bg-indigo-500 h-full rounded-full w-[65%] shadow-lg shadow-indigo-500/50" />
+            <div className="mt-6">
+              <p className="text-3xl font-extrabold text-zinc-900 tracking-tight">{inventory.length}</p>
+              <div className="w-full bg-zinc-100 rounded-full h-1 mt-4">
+                <div className="bg-indigo-500 h-full rounded-full w-[65%]" />
               </div>
             </div>
-          </Card3D>
+          </Card>
           
-          <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-2xl p-5 border border-zinc-900 shadow-xl flex flex-col justify-between">
+          <Card className="flex flex-col justify-between">
             <div className="flex justify-between items-start">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Threat Alerts</p>
-              <span className={`p-1.5 rounded-lg transition-colors duration-300 ${alerts.length > 0 ? "bg-amber-500/20 text-amber-400" : "bg-zinc-850 text-zinc-650"}`}>
+              <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Threat Alerts</p>
+              <span className={`p-2 rounded-xl border transition-colors duration-300 ${alerts.length > 0 ? "bg-amber-50 border-amber-200 text-amber-650 animate-pulse" : "bg-zinc-50 border-zinc-200 text-zinc-450"}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </span>
             </div>
-            <div className="mt-4">
-              <p className="text-3xl font-black text-white">{alerts.length}</p>
-              <div className="w-full bg-zinc-950/60 rounded-full h-1 mt-4 border border-zinc-900">
-                <div className={`h-full rounded-full transition-all duration-300 ${alerts.length > 0 ? "bg-amber-500 w-[45%] shadow-lg shadow-amber-500/50" : "bg-zinc-800 w-0"}`} />
+            <div className="mt-6">
+              <p className="text-3xl font-extrabold text-zinc-900 tracking-tight">{alerts.length}</p>
+              <div className="w-full bg-zinc-100 rounded-full h-1 mt-4">
+                <div className={`h-full rounded-full transition-all duration-300 ${alerts.length > 0 ? "bg-amber-500 w-[45%]" : "bg-zinc-200 w-0"}`} />
               </div>
             </div>
-          </Card3D>
+          </Card>
           
-          <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-2xl p-5 border border-zinc-900 shadow-xl flex flex-col justify-between">
+          <Card className="flex flex-col justify-between">
             <div className="flex justify-between items-start">
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Legal Agreements</p>
-              <span className="p-1.5 rounded-lg bg-pink-500/10 text-pink-400">
+              <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Legal Agreements</p>
+              <span className="p-2 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </span>
             </div>
-            <div className="mt-4">
-              <p className="text-3xl font-black text-white">{contracts.length}</p>
-              <div className="w-full bg-zinc-950/60 rounded-full h-1 mt-4 border border-zinc-900">
-                <div className="bg-pink-500 h-full rounded-full w-full shadow-lg shadow-pink-500/50" />
+            <div className="mt-6">
+              <p className="text-3xl font-extrabold text-zinc-900 tracking-tight">{contracts.length}</p>
+              <div className="w-full bg-zinc-100 rounded-full h-1 mt-4">
+                <div className="bg-indigo-500 h-full rounded-full w-full" />
               </div>
             </div>
-          </Card3D>
+          </Card>
         </div>
 
         {/* Live Map & Suppliers/Inventory Group */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Live Telemetry Map - Takes 1 column */}
-          <Card3D className="lg:col-span-1 bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl flex flex-col justify-between h-full min-h-[380px]">
-            <div className="mb-4">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+          <Card className="lg:col-span-1 flex flex-col justify-between h-full min-h-[380px]">
+            <div className="mb-6">
+              <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
                 Telemetry Channel Map
               </h2>
-              <p className="text-[11px] text-zinc-500 mt-1">
+              <p className="text-[11px] text-zinc-400 mt-1">
                 Visualizing active supply line node channels, alert pathways, and data flows.
               </p>
             </div>
             
             <TelemetryMap suppliers={suppliers} alerts={alerts} />
-          </Card3D>
+          </Card>
 
           {/* Supplier Directory - Takes 1 column */}
-          <Card3D className="lg:col-span-1 bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl flex flex-col h-full min-h-[380px]">
+          <Card className="lg:col-span-1 flex flex-col h-full min-h-[380px]">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
                 🏭 Suppliers Directory
                 {isSearching && (
-                  <span className="bg-cyan-500/10 text-cyan-400 text-[9px] font-bold px-2 py-0.5 rounded-full border border-cyan-500/20">
+                  <span className="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded border border-indigo-150">
                     Filtered
                   </span>
                 )}
               </h2>
               {isSearching && (
-                <button onClick={clearSearch} className="text-[10px] text-zinc-400 hover:text-white underline cursor-pointer">
+                <button onClick={clearSearch} className="text-[10px] text-zinc-450 hover:text-zinc-700 underline cursor-pointer">
                   Reset
                 </button>
               )}
             </div>
             
             {/* Semantic Search */}
-            <div className="flex gap-2 mb-4">
-              <div className="relative flex-1 group/input">
-                <input
-                  type="text"
-                  placeholder="Semantic search (e.g. packaging Mumbai)..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
-                  className="w-full bg-zinc-950/80 border border-zinc-900 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/30 text-white placeholder-zinc-700 transition-all font-mono"
-                />
-                <div className="absolute inset-0 rounded-xl border border-transparent group-hover/input:border-zinc-800/80 pointer-events-none transition-colors duration-300" />
-              </div>
+            <div className="flex gap-2 mb-6">
+              <input
+                type="text"
+                placeholder="Semantic search (e.g. packaging Mumbai)..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-300 focus:ring-2 focus:ring-indigo-500/10 text-zinc-900 placeholder-zinc-350 transition-all font-mono"
+              />
               <button
                 onClick={handleSearch}
-                className="bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-cyan-500/30 text-cyan-400 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
+                className="bg-white hover:bg-zinc-50 border border-zinc-200 hover:border-zinc-300 text-indigo-600 px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer flex items-center gap-1 active:scale-95 shadow-sm"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -556,19 +462,19 @@ export default function Home() {
             </div>
 
             {/* Suppliers List */}
-            <div className="space-y-2 flex-1 overflow-y-auto max-h-[250px] pr-1">
+            <div className="space-y-3 flex-1 overflow-y-auto max-h-[220px] pr-1">
               {suppliers.length === 0 ? (
-                <p className="text-zinc-600 text-xs py-8 text-center font-mono">No supply lines discovered.</p>
+                <p className="text-zinc-450 text-xs py-8 text-center font-mono">No supply lines discovered.</p>
               ) : (
                 suppliers.map(s => (
-                  <div key={s._id} className="bg-zinc-950/30 hover:bg-zinc-950/80 border border-zinc-900/60 rounded-xl p-3 flex justify-between items-center transition-all duration-300 hover:border-zinc-800">
+                  <div key={s._id} className="bg-white border border-zinc-200/80 rounded-xl p-4 flex justify-between items-center transition-all duration-200 hover:border-zinc-300">
                     <div>
-                      <p className="font-bold text-xs text-white">{s.name}</p>
-                      <p className="text-zinc-500 text-[10px] mt-0.5">{s.location} · <span className="text-zinc-400 font-mono text-[9px]">{s.category}</span></p>
+                      <p className="font-bold text-xs text-zinc-900">{s.name}</p>
+                      <p className="text-zinc-400 text-[10px] mt-1">{s.location} · <span className="text-zinc-500 font-mono text-[9px]">{s.category}</span></p>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[8px] font-extrabold uppercase tracking-wider text-emerald-400 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/25 rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded">
                         {s.status}
                       </span>
                     </div>
@@ -576,155 +482,145 @@ export default function Home() {
                 ))
               )}
             </div>
-          </Card3D>
+          </Card>
 
           {/* Stock Inventory - Takes 1 column */}
-          <Card3D className="lg:col-span-1 bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl flex flex-col h-full min-h-[380px]">
-            <h2 className="text-sm font-bold text-white mb-5 flex items-center gap-2">
+          <Card className="lg:col-span-1 flex flex-col h-full min-h-[380px]">
+            <h2 className="text-sm font-bold text-zinc-900 mb-6 flex items-center gap-2">
               📦 Inventory Reserves & Buffer
             </h2>
             
-            <div className="space-y-4 flex-1 overflow-y-auto max-h-[300px] pr-1">
+            <div className="space-y-4 flex-1 overflow-y-auto max-h-[280px] pr-1">
               {inventory.map(i => {
                 const percent = Math.min(100, Math.max(10, (i.days_remaining / 14) * 100));
                 const isLow = i.days_remaining <= 5;
                 return (
-                  <div key={i._id} className="bg-zinc-950/30 border border-zinc-900/60 rounded-xl p-3.5 space-y-2 hover:border-zinc-800 transition-colors duration-300">
+                  <div key={i._id} className="bg-white border border-zinc-200/80 rounded-xl p-4 space-y-3 hover:border-zinc-300 transition-all duration-200">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-bold text-xs text-white">{i.item_name}</p>
-                        <p className="text-zinc-500 text-[10px] mt-0.5">
-                          {i.quantity.toLocaleString()} {i.unit} · sourced from <span className="text-cyan-400 font-medium">{i.supplier_name}</span>
+                        <p className="font-bold text-xs text-zinc-900">{i.item_name}</p>
+                        <p className="text-zinc-400 text-[10px] mt-1">
+                          {i.quantity.toLocaleString()} {i.unit} · sourced from <span className="text-indigo-600 font-medium">{i.supplier_name}</span>
                         </p>
                       </div>
-                      <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded border tracking-wider uppercase ${isLow ? "bg-red-500/10 text-red-400 border-red-500/20 animate-pulse" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"}`}>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border tracking-wider uppercase ${isLow ? "bg-red-50 text-red-700 border-red-155" : "bg-zinc-50 text-zinc-650 border-zinc-200"}`}>
                         {i.days_remaining}d Reserve
                       </span>
                     </div>
                     
                     {/* Progress Bar Widget */}
-                    <div className="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-900">
+                    <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
                       <div 
                         style={{ width: `${percent}%` }}
-                        className={`h-full rounded-full transition-all duration-700 ${isLow ? "bg-gradient-to-r from-rose-500 to-red-500 shadow-md shadow-red-500/50" : "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md shadow-emerald-500/50"}`}
+                        className={`h-full rounded-full transition-all duration-700 ${isLow ? "bg-red-500" : "bg-zinc-900"}`}
                       />
                     </div>
                   </div>
                 );
               })}
             </div>
-          </Card3D>
+          </Card>
         </div>
 
         {/* Simulate Disruption Control Panel */}
-        <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl">
-          <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+        <Card className="bg-white border border-zinc-200/80 rounded-3xl p-8 shadow-sm">
+          <h2 className="text-sm font-bold text-zinc-900 mb-1 flex items-center gap-2">
             🧪 Crisis Simulation Center
           </h2>
-          <p className="text-zinc-500 text-xs mb-4">
+          <p className="text-zinc-400 text-xs mb-6 font-medium">
             Manually trigger local disruptions to test agent reaction capabilities and telemetry channel response.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="relative group/select">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
               <select
                 value={simSupplier}
                 onChange={e => setSimSupplier(e.target.value)}
-                className="w-full bg-zinc-950/80 border border-zinc-900 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-800 font-mono appearance-none cursor-pointer"
+                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 focus:outline-none focus:border-zinc-300 focus:ring-2 focus:ring-indigo-500/10 font-sans appearance-none cursor-pointer"
               >
                 <option value="">Choose Targeted Supplier</option>
                 {suppliers.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
               </select>
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-zinc-500">
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-zinc-400 text-[10px]">
                 ▼
               </div>
             </div>
             
-            <div className="relative group/input">
+            <div>
               <input
                 value={simReason}
                 onChange={e => setSimReason(e.target.value)}
                 placeholder="e.g. Flood warnings / Strikes / Power failures"
-                className="w-full bg-zinc-950/80 border border-zinc-900 rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-800 font-mono"
+                className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-zinc-300 focus:ring-2 focus:ring-indigo-500/10 font-sans"
               />
-              <div className="absolute inset-0 rounded-xl border border-transparent group-hover/input:border-zinc-800/80 pointer-events-none transition-colors duration-300" />
             </div>
 
             <button
               onClick={simulateAlert}
               disabled={running || !simSupplier || !simReason}
-              className="bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white disabled:opacity-50 px-5 py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer shadow-lg shadow-rose-950/20 flex items-center justify-center gap-1.5 active:scale-98"
+              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white disabled:opacity-50 px-5 py-3 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 active:scale-98 shadow-sm"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
               Inject Simulation Event
             </button>
           </div>
-        </Card3D>
+        </Card>
 
         {/* Supplier Contracts & Clause Analysis */}
-        <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl">
+        <Card className="bg-white border border-zinc-200/80 rounded-3xl p-8 shadow-sm">
           <div className="flex justify-between items-center mb-1">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
               📄 Agreement & Clause Vector Scan
             </h2>
             {isContractSearching && (
-              <button onClick={clearContractSearch} className="text-[10px] text-zinc-400 hover:text-white underline cursor-pointer">
+              <button onClick={clearContractSearch} className="text-[10px] text-zinc-450 hover:text-zinc-700 underline cursor-pointer font-medium">
                 Reset Search
               </button>
             )}
           </div>
-          <p className="text-zinc-500 text-xs mb-4">
+          <p className="text-zinc-400 text-xs mb-6 font-medium">
             Gemini vector search analyzes legal agreements for Force Majeure, Late Penalties, and Liability offsets.
           </p>
 
           {/* Search Bar */}
-          <div className="flex gap-2 mb-6">
-            <div className="relative flex-1 group/input">
-              <input
-                type="text"
-                placeholder="Query clauses (e.g. force majeure late penalty cap, delivery delays, SLA conditions)..."
-                value={contractSearchQuery}
-                onChange={e => setContractSearchQuery(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleContractSearch(); }}
-                className="w-full bg-zinc-950/80 border border-zinc-900 rounded-xl px-4 py-3 text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-pink-500/40 focus:ring-1 focus:ring-pink-500/30 transition-all font-mono"
-              />
-              <div className="absolute inset-0 rounded-xl border border-transparent group-hover/input:border-zinc-800/80 pointer-events-none transition-colors duration-300" />
-            </div>
+          <div className="flex gap-3 mb-8">
+            <input
+              type="text"
+              placeholder="Query clauses (e.g. force majeure late penalty cap, delivery delays, SLA conditions)..."
+              value={contractSearchQuery}
+              onChange={e => setContractSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleContractSearch(); }}
+              className="flex-1 bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 placeholder-zinc-350 focus:outline-none focus:border-zinc-300 focus:ring-2 focus:ring-indigo-500/10 transition-all font-sans"
+            />
             <button
               onClick={handleContractSearch}
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-pink-500/30 text-pink-400 px-5 py-3 rounded-xl text-xs font-bold transition duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-95"
+              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-5 py-3 rounded-xl text-xs font-bold transition duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-95 shadow-sm"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
               Analyze SLA
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {contracts.length === 0 ? (
-              <p className="text-zinc-600 text-xs py-8 text-center col-span-3 font-mono">
+              <p className="text-zinc-450 text-xs py-8 text-center col-span-3 font-mono">
                 {isContractSearching ? "No matching contract clauses found for this query." : "No contract documents uploaded."}
               </p>
             ) : (
               contracts.map(c => (
                 <div 
                   key={c._id} 
-                  className="bg-zinc-950/40 border border-zinc-900/60 rounded-2xl p-5 hover:border-pink-500/20 hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-0.5 group/card"
+                  className="bg-white border border-zinc-200/80 rounded-2xl p-6 hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="bg-zinc-900/80 text-pink-400 border border-pink-500/15 text-[9px] px-2 py-0.5 rounded font-mono">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="bg-zinc-100 text-zinc-700 border border-zinc-200 text-[10px] px-2 py-0.5 rounded font-mono">
                         {c.contract_id}
                       </span>
-                      <span className="text-[9px] text-zinc-500 font-mono">
+                      <span className="text-[10px] text-zinc-400 font-mono">
                         {c.effective_date} / {c.expiration_date}
                       </span>
                     </div>
-                    <h3 className="font-bold text-xs text-white mb-2.5">Supplier: {c.supplier_name}</h3>
-                    <div className="bg-zinc-950/90 border border-zinc-900/60 rounded-xl p-3.5 text-[10px] text-zinc-400 leading-relaxed font-mono max-h-48 overflow-y-auto shadow-inner relative z-10 scrollbar-thin">
+                    <h3 className="font-bold text-xs text-zinc-900 mb-3">Supplier: {c.supplier_name}</h3>
+                    <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 text-[11px] text-zinc-500 leading-relaxed font-mono max-h-48 overflow-y-auto scrollbar-thin">
                       {highlightText(c.contract_text, contractSearchQuery)}
                     </div>
                   </div>
@@ -732,62 +628,62 @@ export default function Home() {
               ))
             )}
           </div>
-        </Card3D>
+        </Card>
 
         {/* Threat Alerts Logs */}
-        <Card3D className="bg-zinc-900/30 backdrop-blur-xl rounded-3xl p-6 border border-zinc-900 shadow-xl">
-          <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+        <Card className="bg-white border border-zinc-200/80 rounded-3xl p-8 shadow-sm">
+          <h2 className="text-sm font-bold text-zinc-900 mb-6 flex items-center gap-2">
             🚨 Threat Alerts & Agent Execution Logs
           </h2>
           
           {alerts.length === 0 ? (
-            <p className="text-zinc-600 text-xs py-10 text-center bg-zinc-950/10 border border-zinc-900/40 rounded-2xl font-mono">
+            <p className="text-zinc-400 text-xs py-10 text-center bg-zinc-50 border border-zinc-150 rounded-2xl font-mono">
               No current disruptions detected. Pipeline running in standby.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {alerts.map(a => (
-                <div key={a._id} className="bg-zinc-950/40 border border-zinc-900/60 rounded-2xl p-5 relative overflow-hidden group/alert hover:border-zinc-800 transition-colors duration-300">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-rose-500/80" />
+                <div key={a._id} className="bg-white border border-zinc-200/80 rounded-2xl p-6 relative overflow-hidden group/alert hover:border-zinc-300 transition-all duration-200">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
                   
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5 pb-2.5 border-b border-zinc-900">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[9px] uppercase font-extrabold tracking-wider text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-zinc-100">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[9px] uppercase font-bold tracking-wider text-red-700 bg-red-50 border border-red-100 px-2 py-0.5 rounded">
                         {a.risk_level} THREAT
                       </span>
-                      <p className="font-bold text-xs text-white">Target Supplier: {a.supplier_name}</p>
+                      <p className="font-bold text-xs text-zinc-900">Target Supplier: {a.supplier_name}</p>
                     </div>
-                    <span className="text-[9px] text-zinc-500 font-mono flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span className="text-[9px] text-zinc-400 font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                       Telemetry Trigger Active
                     </span>
                   </div>
                   
-                  <div className="space-y-3.5 text-[11px]">
+                  <div className="space-y-4 text-[11px] leading-relaxed text-zinc-650">
                     <div>
-                      <p className="text-zinc-500 font-bold mb-1 uppercase tracking-widest text-[9px]">Disruption Details</p>
-                      <p className="text-zinc-300 font-mono">{a.reason}</p>
+                      <p className="text-zinc-400 font-bold mb-1 uppercase tracking-wider text-[9px]">Disruption Details</p>
+                      <p className="text-zinc-700 font-mono">{a.reason}</p>
                     </div>
                     
                     {a.risk_analysis && (
-                      <div className="bg-zinc-950/60 border border-zinc-900 rounded-xl p-4 space-y-1.5">
-                        <p className="text-cyan-400 font-extrabold uppercase tracking-widest text-[9px] flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                      <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 space-y-2">
+                        <p className="text-indigo-650 font-bold uppercase tracking-wider text-[9px] flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                           Risk Analyst Agent Output
                         </p>
-                        <div className="text-zinc-400 whitespace-pre-wrap font-mono text-[10px] leading-relaxed">
+                        <div className="text-zinc-600 whitespace-pre-wrap font-mono text-[10px] leading-relaxed">
                           {a.risk_analysis}
                         </div>
                       </div>
                     )}
                     
                     {a.action_plan && (
-                      <div className="bg-zinc-950/60 border border-zinc-900 rounded-xl p-4 space-y-1.5">
-                        <p className="text-indigo-400 font-extrabold uppercase tracking-widest text-[9px] flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                      <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4 space-y-2">
+                        <p className="text-zinc-700 font-bold uppercase tracking-wider text-[9px] flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-550" />
                           Action Agent Output & Mitigation SLA
                         </p>
-                        <div className="text-zinc-400 whitespace-pre-wrap font-mono text-[10px] leading-relaxed">
+                        <div className="text-zinc-600 whitespace-pre-wrap font-mono text-[10px] leading-relaxed">
                           {a.action_plan}
                         </div>
                       </div>
@@ -797,7 +693,7 @@ export default function Home() {
               ))}
             </div>
           )}
-        </Card3D>
+        </Card>
       </div>
     </main>
   );
