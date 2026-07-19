@@ -70,11 +70,11 @@ export default function LoginPage() {
               style={{ animationDelay: `${(index + 1) * 0.06}s` }}
             >
               <span 
-                className={`text-2xl sm:text-4.5xl md:text-5.5xl lg:text-6.5xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
+                className={`text-3xl sm:text-5xl md:text-6.5xl lg:text-7.5xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
                 style={{ 
                   animationDelay: `${(index + 1) * 0.06}s`,
                   display: "inline-block",
-                  transform: "scaleX(0.78) scaleY(1.22)"
+                  transform: "scaleX(0.88) scaleY(1.12)"
                 }}
               >
                 {char}
