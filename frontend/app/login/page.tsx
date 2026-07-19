@@ -52,35 +52,42 @@ export default function LoginPage() {
       {/* Background Dot Grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#1f2030_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-5 transition-all duration-300">
+      <div className="w-full max-w-2xl mx-auto text-center relative z-10 mb-12">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-6 transition-all duration-300">
           <span className="text-xl text-[#5E6AD2] select-none font-black">⚡</span>
         </div>
-        <div className="flex justify-center items-center gap-1 sm:gap-1.5 mb-4 select-none">
+        
+        {/* Boxed Grid Banner */}
+        <div className="w-full border border-[#1F202E] rounded-xl overflow-hidden bg-[#12131A] grid grid-cols-10 divide-x divide-[#1F202E] shadow-xl">
           {"SUPPLYMIND".split("").map((char, index) => (
             <div
               key={index}
-              className={`w-9 h-12 sm:w-11 sm:h-14 bg-[#12131A] border border-[#1F202E] flex items-center justify-center rounded-lg shadow-sm transition-all duration-300 ${loading ? "animate-flow-bold" : ""}`}
+              className={`h-20 sm:h-24 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}
               style={{ animationDelay: `${index * 0.06}s` }}
             >
-              <span className="text-xl sm:text-2xl font-black tracking-normal text-white uppercase font-sans">
+              <span 
+                className={`text-2xl sm:text-3.5xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
+                style={{ animationDelay: `${index * 0.06}s` }}
+              >
                 {char}
               </span>
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between px-2 sm:px-4 mt-4 max-w-[280px] sm:max-w-[345px] mx-auto text-zinc-500 text-[8px] sm:text-[9px] uppercase tracking-widest font-mono font-bold select-none">
-          <div className="flex items-center gap-1 opacity-60">
-            <span>🔇</span>
+
+        {/* Caption Status Bar */}
+        <div className="flex items-center justify-between px-3 mt-4 text-zinc-550 text-[9px] sm:text-[10px] uppercase tracking-widest font-mono font-bold select-none">
+          <div className="flex items-center gap-1.5 opacity-60">
+            <span className="text-[10px]">🔇</span>
             <span>Sound Off</span>
           </div>
           <div className="opacity-70">
-            Tracked, Protected, Prepared
+            Tracked · Protected · Prepared
           </div>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-[#12131A] border border-[#1F202E] p-10 shadow-xl rounded-2xl overflow-hidden">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
@@ -139,20 +146,33 @@ export default function LoginPage() {
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes flow-bold {
           0%, 100% {
-            transform: translateY(0);
             background-color: #12131A;
             border-color: #1F202E;
-            box-shadow: none;
           }
           50% {
-            transform: translateY(-6px);
             background-color: #161722;
             border-color: #5E6AD2;
-            box-shadow: 0 4px 14px rgba(94, 106, 210, 0.25);
+          }
+        }
+        @keyframes flow-text {
+          0%, 100% {
+            transform: translateY(0);
+            color: #ffffff;
+            opacity: 0.65;
+          }
+          50% {
+            transform: translateY(-5px);
+            color: #5E6AD2;
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(94, 106, 210, 0.65);
           }
         }
         .animate-flow-bold {
           animation: flow-bold 1.2s ease-in-out infinite;
+        }
+        .animate-flow-text {
+          animation: flow-text 1.2s ease-in-out infinite;
+          display: inline-block;
         }
       `}} />
     </div>
