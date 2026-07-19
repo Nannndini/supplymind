@@ -55,10 +55,10 @@ export default function LoginPage() {
       <div className="w-full max-w-5xl md:max-w-6xl mx-auto text-center relative z-10 mb-16 px-4">
         
         {/* Boxed Grid Banner */}
-        <div className="w-full border border-[#1F202E] rounded-2xl overflow-hidden bg-[#12131A] grid grid-cols-11 divide-x divide-[#1F202E] shadow-2xl">
+        <div className="w-full border border-[#1F202E] rounded-xl overflow-hidden bg-[#12131A] grid grid-cols-11 divide-x divide-[#1F202E] shadow-2xl">
           {/* Brand Icon Cell */}
-          <div className={`h-24 sm:h-32 md:h-40 lg:h-48 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}>
-            <svg className={`w-6 h-6 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 text-[#5E6AD2] ${loading ? "animate-flow-text" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className={`h-16 sm:h-22 md:h-28 lg:h-32 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}>
+            <svg className={`w-5 h-5 sm:w-8 sm:h-8 md:w-11 md:h-11 lg:w-14 lg:h-14 text-[#5E6AD2] ${loading ? "animate-flow-text" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
@@ -66,12 +66,16 @@ export default function LoginPage() {
           {"SUPPLYMIND".split("").map((char, index) => (
             <div
               key={index}
-              className={`h-24 sm:h-32 md:h-40 lg:h-48 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}
+              className={`h-16 sm:h-22 md:h-28 lg:h-32 flex items-center justify-center bg-[#12131A] transition-all duration-350 ${loading ? "animate-flow-bold" : ""}`}
               style={{ animationDelay: `${(index + 1) * 0.06}s` }}
             >
               <span 
-                className={`text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
-                style={{ animationDelay: `${(index + 1) * 0.06}s` }}
+                className={`text-2xl sm:text-4.5xl md:text-5.5xl lg:text-6.5xl font-black text-white uppercase select-none font-sans ${loading ? "animate-flow-text" : ""}`}
+                style={{ 
+                  animationDelay: `${(index + 1) * 0.06}s`,
+                  display: "inline-block",
+                  transform: "scaleX(0.78) scaleY(1.22)"
+                }}
               >
                 {char}
               </span>
