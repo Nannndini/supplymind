@@ -56,9 +56,23 @@ export default function LoginPage() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12131A] border border-[#1F202E] shadow-sm mb-5 transition-all duration-300">
           <span className="text-xl text-[#5E6AD2] select-none font-black">⚡</span>
         </div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-white">
-          SupplyMind
-        </h2>
+        {loading ? (
+          <h2 className="text-3xl font-black tracking-widest text-white flex justify-center select-none">
+            {"SUPPLYMIND".split("").map((char, index) => (
+              <span
+                key={index}
+                className="animate-flow-bold"
+                style={{ animationDelay: `${index * 0.08}s` }}
+              >
+                {char}
+              </span>
+            ))}
+          </h2>
+        ) : (
+          <h2 className="text-3xl font-black tracking-widest text-white uppercase select-none">
+            SUPPLYMIND
+          </h2>
+        )}
         <p className="mt-2 text-[10px] text-zinc-550 uppercase tracking-widest font-semibold font-mono">
           Supply Chain Disruption Monitor
         </p>
@@ -120,6 +134,25 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes flow-bold {
+          0%, 100% {
+            transform: translateY(0);
+            color: #ffffff;
+            opacity: 0.5;
+          }
+          50% {
+            transform: translateY(-5px);
+            color: #5E6AD2;
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(94, 106, 210, 0.6);
+          }
+        }
+        .animate-flow-bold {
+          animation: flow-bold 1.2s ease-in-out infinite;
+          display: inline-block;
+        }
+      `}} />
     </div>
   );
 }

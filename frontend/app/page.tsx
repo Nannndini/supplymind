@@ -348,7 +348,7 @@ export default function Home() {
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#12131A] border border-[#1F202E]">
               <span className="text-sm text-[#5E6AD2] select-none font-black">⚡</span>
             </div>
-            <span className="font-extrabold text-sm tracking-tight text-white">SupplyMind</span>
+            <span className="font-extrabold text-sm tracking-widest text-white">SUPPLYMIND</span>
             <span className="bg-[#1C1D2A] text-[#5E6AD2] border border-[#2A2B3E] text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase tracking-wider">
               Core v1.2
             </span>
