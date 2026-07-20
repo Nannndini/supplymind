@@ -36,6 +36,7 @@ graph TD
 ## ⚡ Key Features
 
 - **Real-Time Pipeline**: Runs end-to-end monitoring, analysis, and operational action drafting.
+- **Shared Workspace Authentication**: Multiple users can create accounts via signup; all users share the same demo workspace (suppliers, inventory, alerts) — this is a shared-workspace demo, not per-user data isolation.
 - **MongoDB Atlas Vector Search**: Performs semantic queries on suppliers based on name, category, items supplied, and location using Gemini `text-embedding-004` embeddings.
 - **Graceful Fallback**: If the MongoDB Atlas Search index is not configured or fails, the API automatically falls back to regex-based text search over fields.
 - **Robust Error Handling**: Agents are designed to handle missing keys, network timeouts, and DB failures gracefully without failing the pipeline.

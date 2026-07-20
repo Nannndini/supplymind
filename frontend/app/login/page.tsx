@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [isSignUp, setIsSignUp] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("supplymind_token");
     if (token) {
@@ -25,7 +27,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API}/login`, {
+      const endpoint = isSignUp ? "/signup" : "/login";
+      const response = await fetch(`${API}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -33,7 +36,7 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.detail || "Invalid credentials");
+        throw new Error(data.detail || (isSignUp ? "Registration failed" : "Invalid credentials"));
       }
 
       const data = await response.json();
@@ -141,11 +144,24 @@ export default function LoginPage() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                    Connecting...
+                    {isSignUp ? "Creating Account..." : "Connecting..."}
                   </span>
                 ) : (
-                  "Sign In"
+                  isSignUp ? "Sign Up" : "Sign In"
                 )}
+              </button>
+            </div>
+
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError("");
+                }}
+                className="text-xs text-zinc-400 hover:text-white transition-colors duration-150 focus:outline-none"
+              >
+                {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
               </button>
             </div>
           </form>
